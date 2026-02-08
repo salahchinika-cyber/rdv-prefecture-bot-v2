@@ -43,50 +43,36 @@ def check_prefecture():
     except:
         return None
 
-# === DÉMARRAGE ===
-startup_msg = """🤖 **SURVEILLANCE INFINIE RDV 11800** 🔄
+# === DÉMARRAGE SILENCIEUX ===
+send_telegram("🤖 **Surveillance RDV 11800 ACTIVE** ✅\n\n⏱️ Vérifications silencieuses 24/7\n🚨 Alerte UNIQUEMENT pour créneaux MEILLEURS\n\n*Status mutés - seul les alertes sonnent*")
 
-📍 Démarche: Remise titre séjour Loire-Atlantique
-⏱️ Fréquence: toutes les 60s
-🎯 Alerte: TOUT nouveau créneau MEILLEUR
-💾 Status: Surveillance 24/7 INFINIE
-
-**🚀 Bot lancé le {datetime.now().strftime('%d/%m %H:%M')}**"""
-send_telegram(startup_msg)
-
-print("🚀 Surveillance infinie démarrée")
+print("🚀 Surveillance DISCRÈTE démarrée")
 last_closest_date = None
 checks = 0
+status_counter = 0  # Compteur pour status RARE
 
-while True:  # 🔄 BOUCLE INFINIE
+while True:
     checks += 1
-    print(f"Check #{checks} - {datetime.now().strftime('%H:%M:%S')}")
-    
     current_date = check_prefecture()
     
     if current_date:
-        print(f"📅 Date trouvée: {current_date}")
-        
-        # ALERTE si première date OU date MEILLEURE
+        # ALERTE UNIQUEMENT si date MEILLEURE (pas de spam)
         if last_closest_date is None or current_date < last_closest_date:
             last_closest_date = current_date
             days_ahead = (current_date - date.today()).days
             
-            alert_msg = f"""🚨 **NOUVEAU MEILLEUR CRÉNEAU !** 🚨
+            alert_msg = f"""🚨 **NOUVEAU CRÉNEAU MEILLEUR !**
 
-📅 **Date**: `{current_date.strftime('%d/%m/%Y')}`
-⏳ **Dans**: {days_ahead} jours
-👇 `{URL}`
-📈 **Amélioration** vs précédent
-
-*Surveillance continue...* 🔄"""
+📅 {current_date.strftime('%d/%m/%Y')} ({days_ahead} jours)
+👇 {URL}"""
             send_telegram(alert_msg)
-        else:
-            print(f"ℹ️ {current_date} = pas mieux que {last_closest_date}")
-    else:
-        print("ℹ️ Aucune date détectée")
     
-    # STATUS RÉGULIERS (toutes les 10min)
-    if checks % 10 == 0:
-        uptime_hours = checks * CHECK_INTERVAL / 3600
-        st
+    # STATUS TRÈS RARE : 1 FOIS PAR JOUR (24h = 1440 checks)
+    status_counter += 1
+    if status_counter >= 1440:  # 1x par jour
+        uptime_days = checks * CHECK_INTERVAL / 86400
+        status_msg = f"📊 Status quotidien | {uptime_days:.1f}j | Meilleure date: {last_closest_date.strftime('%d/%m/%Y') if last_closest_date else 'aucune'}"
+        send_telegram(status_msg)
+        status_counter = 0
+    
+    time.sleep(CHECK_INTERVAL)
